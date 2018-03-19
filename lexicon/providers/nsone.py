@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 def ProviderParser(subparser):
     subparser.add_argument("--auth-token", help="specify token used authenticate to DNS provider")
+    subparser.add_argument("--content", action='append', help="specify the record content (multiple allowed)")
 
 class Provider(BaseProvider):
 
@@ -33,14 +34,13 @@ class Provider(BaseProvider):
 
     # Create record. If record already exists with the same content, do nothing'
     def create_record(self, type, name, content):
-        record = {
-            'type': type,
-            'domain': self._full_name(name),
-            'zone': self.domain_id,
-            'answers':[
-                {"answer": [content]}
-            ]
-        }
+        answers = ""
+        for answer in content:
+            if answers != "":
+                answers = answers + ","
+            answers = answers + "{'answer': ['" + answer + "']}"
+        strrecord = "{ 'type': '" + type + "', 'domain': '" + self._full_name(name) + "', 'zone': '" + self.domain_id + "', 'answers':[ " + answers + " ] }"
+        record = ast.literal_eval(strrecord)
         payload = {}
         try:
             payload = self._put('/zones/{0}/{1}/{2}'.format(self.domain_id, self._full_name(name),type), record)
@@ -119,7 +119,7 @@ class Provider(BaseProvider):
 
             if link_target and link_target.get('short_answers', None):
                 # target found (could be the same as orig record)
-                answer = link_target['short_answers'][0]
+                answer = link_target['short_answers']
             else:
                 # recursion limit reached. or unhandled record format.
                 answer = ''
@@ -179,6 +179,7 @@ class Provider(BaseProvider):
         # is always True at this point, if a non 200 response is returned an error is raised.
         logger.debug('delete_record: %s', True)
         return True
+
 
 
     # Helpers

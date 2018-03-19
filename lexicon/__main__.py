@@ -55,7 +55,7 @@ def MainParser():
         provider_module = importlib.import_module('lexicon.providers.' + provider)
         provider_parser = getattr(provider_module, 'ProviderParser')
 
-        subparser = subparsers.add_parser(provider, help='{0} provider'.format(provider), parents=[BaseProviderParser()])
+        subparser = subparsers.add_parser(provider, help='{0} provider'.format(provider), parents=[BaseProviderParser()], conflict_handler='resolve')
         provider_parser(subparser)
 
     return parser
